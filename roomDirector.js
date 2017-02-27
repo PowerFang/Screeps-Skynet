@@ -1,6 +1,52 @@
+var _ = require('lodash');
+
+var extensionPositions = {
+    1: { x: -1, y: -1 },
+    2: { x: 1, y: -1 },
+    3: { x: 1, y: 1 },
+    4: { x: -1, y: 1 },
+    5: { x: -2, y: -2 },
+    6: { x: 0, y: -2 },
+    7: { x: 2, y: -2 },
+    8: { x: 2, y: 0 },
+    9: { x: 2, y: 2 },
+    10: { x: 0, y: 2 },
+    11: { x: -2, y: 2 },
+    12: { x: -2, y: 0 },
+    13: { x: -3, y: -3 },
+    14: { x: -1, y: -3 },
+    15: { x: 1, y: -3 },
+    16: { x: 3, y: -3 },
+    17: { x: 3, y: -1 },
+    18: { x: 3, y: 1 },
+    19: { x: 3, y: 3 },
+    20: { x: 1, y: 3 },
+    21: { x: -1, y: 3 },
+    22: { x: -3, y: 3 },
+    23: { x: -3, y: 1 },
+    24: { x: -3, y: -1 },
+    25: { x: -4, y: -4 },
+    26: { x: -2, y: -4 },
+    27: { x: 0, y: -4 },
+    28: { x: 2, y: -4 },
+    29: { x: 4, y: -4 },
+    30: { x: 4, y: -2 },
+    31: { x: 4, y: 0 },
+    32: { x: 4, y: 2 },
+    33: { x: 4, y: 4 },
+    34: { x: 2, y: 4 },
+    35: { x: 0, y: 4 },
+    36: { x: -2, y: 4 },
+    37: { x: -4, y: 4 },
+    38: { x: -4, y: 2 },
+    39: { x: -4, y: 0 },
+    40: { x: -4, y: -2}
+}
+
 var roomDirector = {
     /** @param {Room} room - The spawn that needs help**/
     processRoom: function(room) {
+
 
         var roomCreeps = _.filter(Game.creeps, (c) => c.room.name == room.name);
 
@@ -20,6 +66,30 @@ var roomDirector = {
             this.processRoomCreeps(roomCreeps);
             break;
       }
+
+      if (room.energyCapacityAvailable == room.energyAvailable) {
+          var numExtensions = _.sum(Game.structures, (s) => s.structureType == STRUCTURE_EXTENSION && s.room.name == room.name);
+          var numConstructExtensions = _.sum(Game.constructionSites, (s) => s.structureType == STRUCTURE_EXTENSION && s.room.name == room.name);
+          if (numExtensions < ((room.controller.level-1) * 5) && numConstructExtensions == 0) {
+              var spawns = room.find(FIND_MY_SPAWNS);
+              /** @param {StructureSpawn} **/
+              var spawn = spawns[0];
+              var pos = spawn.pos;
+              for (var trypos in extensionPositions) {
+                  var coods = extensionPositions[trypos];
+                  var tX = coods["x"];
+                  var tY = coods["y"];
+                  var tryX = pos.x + tX;
+                  var tryY = pos.y + tY;
+                  var result = room.createConstructionSite(tryX, tryY, STRUCTURE_EXTENSION);
+                  console.log(result);
+                  if (result == 0) {
+                      break;
+                  }
+              }
+          }
+      }
+
     },
     /** @param {Room} room - The spawn that needs help**/
     assignJobs: function(room, roomCreeps){
@@ -28,9 +98,10 @@ var roomDirector = {
         var energyStructures = room.find(FIND_MY_STRUCTURES, {filter: (s) => (s.energy < s.energyCapacity)});
         var constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
         
-        /** @param {Creep} creep **/
+        
         for(var creepName in roomCreeps){
-            var creep = Game.creeps[creepName];
+            /** @param {Creep} creep **/
+            var creep = Game.creeps[creepName];            
             var creepFunction = this.getCreepFunction(creep);
             if(creep.carry.energy > 0 && (creep.memory.status == 'IDLE' || creep.memory.status == 'ERROR' || !creep.memory.status)){
                 if(creepFunction == 'BUILDER'){
@@ -129,13 +200,15 @@ var roomDirector = {
                 creep.memory.targetId = sources[0].id;
                 creep.memory.status = 'IDLE';
             }
+      } else {
+          var minBuilders = _.filter(roomCreeps, (creep) => creep.memory.role == 'BUILDER');
+
+          if (minBuilders.length < room.memory.minBuilders) {
+              var result = spawn.createCreep([WORK, WORK, CARRY, MOVE], null, { role: 'BUILDER' });
+          }
       }
       
-      var minBuilders = _.filter(roomCreeps, (creep) => creep.memory.role == 'BUILDER');
-      
-      if(minBuilders.length < room.memory.minBuilders){
-          var result = spawn.createCreep([WORK,WORK,CARRY,MOVE],null,{role: 'BUILDER'});
-      }
+
   },
   
   processRoomCreeps: function(roomCreeps) {
@@ -159,14 +232,13 @@ var roomDirector = {
   },
   
   checkUrgentDeliveryTargets: function(room,roomCreeps) {
-      var haulers = _.filter(roomCreeps, (creep) => creep.memory.role == 'HAULER' & creep.memory.status == 'IDLE');
-      var roomControllers = _.filter(room.find(FIND_MY_STRUCTURES), (structure) => structure.structureType == STRUCTURE_CONTROLLER);
-      var roomController = roomControllers[0];
-      if(roomController.ticksToDowngrade > 0){
-          var hauler = roomController.pos.findClosestByRange(haulers);
+      var energyTrucks = _.filter(roomCreeps, (creep) => creep.carry.energy > 0);            
+      if(room.controller.ticksToDowngrade < 3000){
+          var hauler = room.controller.pos.findClosestByRange(energyTrucks);
           if(hauler){
-              hauler.memory.deliverId = roomController.id;
-              hauler.memory.status = 'DELIVERING';    
+              hauler.memory.deliverId = room.controller.id;
+              hauler.memory.jobType = 'DELIVER_ENERGY';
+              hauler.memory.status = 'WORKING';    
           }
           
       }

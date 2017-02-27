@@ -8,7 +8,7 @@ var setupDirector = {
     spawn.room.memory.roomType = 'HOME';
 
     var sources = spawn.room.find(FIND_SOURCES);
-    spawn.room.memory.minMiners = (sources.length * 3);
+    spawn.room.memory.minMiners = (sources.length * 5);
     spawn.room.memory.minBuilders = (sources.length * 1);
     this.spawnBiggestMiner(spawn, spawn.room.energyAvailable);
       

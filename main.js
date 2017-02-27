@@ -45,8 +45,8 @@ module.exports.loop = function () {
             delete Memory.creeps[name];
             console.log('Clearing non-existing creep memory:', name);
         }
-    }
-    
+    }    
+
     // Check if you have no creeps, if so, we are probably in setup mode
     var numCreeps = _.filter(Game.creeps);
     if(numCreeps.length == 0){
@@ -61,8 +61,7 @@ module.exports.loop = function () {
  
     for(var name in Game.creeps) {
 
-        var creep = Game.creeps[name];
-        
+        var creep = Game.creeps[name];   
         if(creep.memory.status == 'WORKING'){
             switch(creep.memory.jobType){
                 case 'DELIVER_ENERGY':
@@ -76,14 +75,6 @@ module.exports.loop = function () {
                     break;
             }
         }
-
-/*
-        if(creep.memory.role == 'MINER'){
-            roleMiner.run(creep);
-        }   
-        if(creep.memory.role == 'HAULER'){
-            roleHauler.run(creep);
-        }
-        */
     }
+
 };
