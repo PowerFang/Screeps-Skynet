@@ -7,6 +7,7 @@ var roleHauler = require('roleHauler');
 var jobDeliverEnergy = require('jobDeliverEnergy');
 var jobMineEnergy = require('jobMineEnergy');
 var jobBuild = require('jobBuild');
+var jobRoadBuilder = require('jobRoadBuilder');
 
 var minersPerSource = 2;
 var minMiners = 1;
@@ -59,19 +60,21 @@ module.exports.loop = function () {
         roomDirector.processRoom(room);
     }
  
-    for(var name in Game.creeps) {
-
-        var creep = Game.creeps[name];   
+    for(var name in Game.creeps) {            
+        var creep = Game.creeps[name];        
         if(creep.memory.status == 'WORKING'){
             switch(creep.memory.jobType){
                 case 'DELIVER_ENERGY':
-                    jobDeliverEnergy.run(creep);
+                    jobDeliverEnergy.run(creep);                    
                     break;
                 case 'MINE_ENERGY':
                     jobMineEnergy.run(creep);
                     break;
                 case 'BUILDING':
                     jobBuild.run(creep);
+                    break;
+                case 'ROAD_BUILDING':
+                    jobRoadBuilder.run(creep);
                     break;
             }
         }
