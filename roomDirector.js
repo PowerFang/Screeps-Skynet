@@ -65,7 +65,7 @@ var roomDirector = {
             roomCreeps = room.find(FIND_MY_CREEPS);
             this.processRoomCreeps(roomCreeps);
             break;
-      }
+      }        
 
       if (room.energyCapacityAvailable == room.energyAvailable) {
           var numExtensions = _.sum(Game.structures, (s) => s.structureType == STRUCTURE_EXTENSION && s.room.name == room.name);
@@ -97,8 +97,37 @@ var roomDirector = {
         var sources = room.find(FIND_SOURCES);
         var energyStructures = room.find(FIND_MY_STRUCTURES, {filter: (s) => (s.energy < s.energyCapacity)});
         var constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
+        var spawns = room.find(FIND_MY_SPAWNS);
         
-        
+        var spawn = spawns[0];
+        var source = sources[0];
+        for (var spawnName in spawns) {
+            var spawn = spawns[spawnName];
+            for (var sourceName in sources) {
+                var source = sources[sourceName];
+                if (!spawn.memory['source_' + source.id] || spawn.memory['source_' + source.id] == "BUILDING") {
+                    var roadBuilder = spawn.pos.findClosestByPath(FIND_MY_CREEPS, { filter: (c) => (c.memory.status = "IDLE") });
+                    roadBuilder.memory.roadName = 'source_' + source.id;
+                    roadBuilder.memory.startId = spawn.id;
+                    roadBuilder.memory.endId = source.id;
+                    roadBuilder.memory.jobType = 'ROAD_BUILDING';
+                    roadBuilder.memory.status = 'WORKING';
+                    spawn.memory['source_' + source.id] = 'BUILDING';
+                    roadBuilder.say("ROADBUILD");
+                }
+            }
+            
+        }
+        if (!spawn.memory[source.name]) {
+            var roadBuilder = spawn.pos.findClosestByPath(FIND_MY_CREEPS);
+            roadBuilder.memory.startId = spawn.id;
+            roadBuilder.memory.endId = source.id;
+            roadBuilder.memory.jobType = 'ROAD_BUILDING';
+            roadBuilder.memory.status = 'WORKING';
+            spawn.memory[source.name] = 'BUILDING';
+            roadBuilder.say("ROADBUILD");
+        }
+
         for(var creepName in roomCreeps){
             /** @param {Creep} creep **/
             var creep = Game.creeps[creepName];            

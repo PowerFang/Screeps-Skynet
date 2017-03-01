@@ -38,6 +38,7 @@ var jobRoadBuilder = {
           }
           var result = creep.moveByPath(creep.memory.roadPath);          
           if (creep.pos.getRangeTo(roadEnd) == 1) {
+              roadStart.memory[creep.memory.roadName] = 'DONE';
               this.completeJob(creep, 'IDLE');
           }
       } else {
@@ -68,6 +69,7 @@ var jobRoadBuilder = {
         creep.memory.startPath = null;
         creep.memory.jobType = null;
         creep.memory.atStart = null;
+        creep.memory.roadName = null;
     }
 
 
